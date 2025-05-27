@@ -1,0 +1,75 @@
+syntax = "proto3";
+package booking;
+option go_package = "grpc-project/booking";
+
+service BookingService {
+  rpc PurchaseBooking (PurchaseBookingRequest) returns (PurchaseBookingResponse);
+  rpc ShowReceipt (ShowReceiptRequest) returns (ShowReceiptResponse);
+  rpc GetSectionBookingDetails(GetSectionBookingDetailsRequest) returns (GetSectionBookingDetailsResponse);
+  rpc UpdateSeatBooking (UpdateSeatBookingRequest) returns (UpdateSeatBookingResponse);
+  rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse);
+}
+
+message User{
+    string userId = 1;
+    string firstName = 2;
+    string lastName = 3;
+    string email = 4;
+}
+
+message PurchaseBookingRequest {
+    string From = 1;
+    string To = 2;
+    User user = 3;
+    float PricePaid = 4;
+}
+
+message Receipt {
+    string ReceiptId = 1;
+    string From = 2;
+    string To = 3;
+    User user = 4;
+    float PricePaid = 5;
+    string Section = 6;
+    string Seat = 7;
+    string BookingStatus = 8;
+}
+
+message PurchaseBookingResponse {
+    Receipt receipt = 1;
+}
+
+message ShowReceiptRequest {
+    string userId = 1;
+}
+
+message ShowReceiptResponse{
+    repeated Receipt receipt = 1;
+}
+
+message GetSectionBookingDetailsRequest {
+    string sectionId = 1;
+}
+message SeatBooking {
+    string seatId = 1;
+    string SeatNumber = 2;
+    User user = 3;
+    bool SeatAvailable = 4;
+}
+message GetSectionBookingDetailsResponse {
+    repeated SeatBooking seatBookings = 1;
+}
+
+message UpdateSeatBookingRequest {
+    string ReceiptId = 1;
+    string NewSeatId = 2;
+}
+message UpdateSeatBookingResponse {
+    Receipt UpdatedReceipt = 1;
+}
+message DeleteBookingRequest {
+    string ReceiptId = 1;
+}
+message DeleteBookingResponse {
+    bool DeleteStatus = 1;
+}
