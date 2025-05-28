@@ -425,6 +425,8 @@ func Test_GetSectionBookingDetails(t *testing.T) {
 						SeatId:        store.Train.Sections[0].Seats[0].Id,
 						SeatNumber:    store.Train.Sections[0].Seats[0].SeatNumber,
 						SeatAvailable: false,
+						SectionId:     store.Train.Sections[0].Id,
+						SectionName:   store.Train.Sections[0].Name,
 						User: &pb.User{
 							UserId:    "1",
 							FirstName: store.Train.Sections[0].Seats[0].User.FirstName,
@@ -435,21 +437,29 @@ func Test_GetSectionBookingDetails(t *testing.T) {
 					{
 						SeatId:        store.Train.Sections[0].Seats[1].Id,
 						SeatNumber:    store.Train.Sections[0].Seats[1].SeatNumber,
+						SectionId:     store.Train.Sections[0].Id,
+						SectionName:   store.Train.Sections[0].Seats[1].SectionName,
 						SeatAvailable: true,
 					},
 					{
 						SeatId:        store.Train.Sections[0].Seats[2].Id,
 						SeatNumber:    store.Train.Sections[0].Seats[2].SeatNumber,
+						SectionId:     store.Train.Sections[0].Id,
+						SectionName:   store.Train.Sections[0].Seats[2].SectionName,
 						SeatAvailable: true,
 					},
 					{
 						SeatId:        store.Train.Sections[0].Seats[3].Id,
 						SeatNumber:    store.Train.Sections[0].Seats[3].SeatNumber,
+						SectionId:     store.Train.Sections[0].Id,
+						SectionName:   store.Train.Sections[0].Seats[3].SectionName,
 						SeatAvailable: true,
 					},
 					{
 						SeatId:        store.Train.Sections[0].Seats[4].Id,
 						SeatNumber:    store.Train.Sections[0].Seats[4].SeatNumber,
+						SectionId:     store.Train.Sections[0].Id,
+						SectionName:   store.Train.Sections[0].Seats[4].SectionName,
 						SeatAvailable: true,
 					},
 				},
@@ -576,8 +586,9 @@ func Test_UpdateSeatBooking(t *testing.T) {
 	tests := map[string]test{
 		"Happy Path - Valid Update Seat Booking Request": {
 			UpdateSeatBookingRequest: &pb.UpdateSeatBookingRequest{
-				ReceiptId: "11",
-				NewSeatId: store.Train.Sections[0].Seats[1].Id,
+				ReceiptId:    "11",
+				NewSeatId:    store.Train.Sections[0].Seats[1].Id,
+				NewSectionId: store.Train.Sections[0].Id,
 			},
 			ExpectedResponse: &pb.UpdateSeatBookingResponse{
 				UpdatedReceipt: &pb.Receipt{
@@ -600,16 +611,27 @@ func Test_UpdateSeatBooking(t *testing.T) {
 		},
 		"Sad Path - Invalid Update Seat Booking Request when request does not have ReceiptId": {
 			UpdateSeatBookingRequest: &pb.UpdateSeatBookingRequest{
-				ReceiptId: "",
-				NewSeatId: store.Train.Sections[0].Seats[1].Id,
+				ReceiptId:    "",
+				NewSeatId:    store.Train.Sections[0].Seats[1].Id,
+				NewSectionId: store.Train.Sections[0].Id,
+			},
+			ExpectedError:    fmt.Errorf("Invalid Update-Seat Booking Request"),
+			ExpectedResponse: nil,
+		},
+		"Sad Path - Invalid Update Seat Booking Request when request does not have NewSectionId ": {
+			UpdateSeatBookingRequest: &pb.UpdateSeatBookingRequest{
+				ReceiptId:    "11",
+				NewSeatId:    store.Train.Sections[0].Seats[1].Id,
+				NewSectionId: "",
 			},
 			ExpectedError:    fmt.Errorf("Invalid Update-Seat Booking Request"),
 			ExpectedResponse: nil,
 		},
 		"Sad Path - Invalid Update Seat Booking Request when request does has invalid ReceiptId": {
 			UpdateSeatBookingRequest: &pb.UpdateSeatBookingRequest{
-				ReceiptId: "24",
-				NewSeatId: store.Train.Sections[0].Seats[1].Id,
+				ReceiptId:    "24",
+				NewSeatId:    store.Train.Sections[0].Seats[1].Id,
+				NewSectionId: store.Train.Sections[0].Id,
 			},
 			ExpectedError:    fmt.Errorf("receipt not found: receipt not found for the given Receipt ID : 24"),
 			ExpectedResponse: nil,

@@ -33,7 +33,8 @@ This project is a gRPC-based application for managing seat bookings in a train r
 - `ReceiptId` (string): The ID of the receipt to update.
 - `NewSeatId` (string): The ID of the new seat to allocate.  
 - `NewsectionId` (string): The ID of the new section to allocate the seat in.
-  **Response**:
+
+**Response**:
 - `UpdatedReceipt` (object): Contains the updated receipt details, including the new seat and section information.
 
 ---
@@ -46,7 +47,8 @@ This project is a gRPC-based application for managing seat bookings in a train r
 - `From` (string): The details of users boarding point.
 - `To` (string): The details of users destination point.
 - `PricePaid` (float) : Price paid by the user.
-  **Response**:
+
+**Response**:
 - `Receipt` (object): Contains details including seat , section , price paid and Booking status information.
 
 
@@ -57,7 +59,8 @@ This project is a gRPC-based application for managing seat bookings in a train r
 **Description**: Cancels an existing booking and marks the seat as available.  
 **Request**:
 - `ReceiptId` (string): The ID of the receipt to cancel.  
-  **Response**:
+  
+**Response**:
 - `DeleteStatus` (boolean): Indicates whether the cancellation was successful.
 
 ---
@@ -67,7 +70,8 @@ This project is a gRPC-based application for managing seat bookings in a train r
 **Description**: Retrieves all booking receipts for a specific user.  
 **Request**:
 - `UserId` (string): The ID of the user whose receipts are to be retrieved.  
-  **Response**:
+  
+**Response**:
 - `Receipts` (array): A list of receipts containing details like seat, section, and booking status.
 
 ---
@@ -77,8 +81,13 @@ This project is a gRPC-based application for managing seat bookings in a train r
 **Description**: Retrieves booking details for all seats in a specific section.  
 **Request**:
 - `SectionId` (string): The ID of the section to retrieve booking details for.  
-  **Response**:
+  
+**Response**:
 - `SeatBookings` (array): A list of seat booking details, including user and seat information.
+### Test Coverage
+- Test Location - cmd/server/service/booking_test.go
+- Coverage - ![Coverage](./docs/coverage.png)
+- Coverage Location - /coverage-report
 
 ### Diagram - Sequence
 ![Sequence](./docs/sequence.png)
