@@ -84,11 +84,16 @@ This project is a gRPC-based application for managing seat bookings in a train r
   
 **Response**:
 - `SeatBookings` (array): A list of seat booking details, including user and seat information.
+
+---
+
 ### Test Coverage
 - Test Location - cmd/server/service/booking_test.go
-- Coverage - ![Coverage](./docs/coverage.png)
+- Coverage - **95.8%**
+ ![Coverage](./docs/coverage.png)
 - Coverage Location - /coverage-report
 
+---
 ### Diagram - Sequence
 ![Sequence](./docs/sequence.png)
 
