@@ -437,8 +437,10 @@ type SeatBooking struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SeatId        string                 `protobuf:"bytes,1,opt,name=seatId,proto3" json:"seatId,omitempty"`
 	SeatNumber    string                 `protobuf:"bytes,2,opt,name=SeatNumber,proto3" json:"SeatNumber,omitempty"`
-	User          *User                  `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
-	SeatAvailable bool                   `protobuf:"varint,4,opt,name=SeatAvailable,proto3" json:"SeatAvailable,omitempty"`
+	SectionId     string                 `protobuf:"bytes,3,opt,name=SectionId,proto3" json:"SectionId,omitempty"`
+	SectionName   string                 `protobuf:"bytes,4,opt,name=SectionName,proto3" json:"SectionName,omitempty"`
+	User          *User                  `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty"`
+	SeatAvailable bool                   `protobuf:"varint,6,opt,name=SeatAvailable,proto3" json:"SeatAvailable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -483,6 +485,20 @@ func (x *SeatBooking) GetSeatId() string {
 func (x *SeatBooking) GetSeatNumber() string {
 	if x != nil {
 		return x.SeatNumber
+	}
+	return ""
+}
+
+func (x *SeatBooking) GetSectionId() string {
+	if x != nil {
+		return x.SectionId
+	}
+	return ""
+}
+
+func (x *SeatBooking) GetSectionName() string {
+	if x != nil {
+		return x.SectionName
 	}
 	return ""
 }
@@ -549,6 +565,7 @@ type UpdateSeatBookingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ReceiptId     string                 `protobuf:"bytes,1,opt,name=ReceiptId,proto3" json:"ReceiptId,omitempty"`
 	NewSeatId     string                 `protobuf:"bytes,2,opt,name=NewSeatId,proto3" json:"NewSeatId,omitempty"`
+	NewSectionId  string                 `protobuf:"bytes,3,opt,name=NewSectionId,proto3" json:"NewSectionId,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -593,6 +610,13 @@ func (x *UpdateSeatBookingRequest) GetReceiptId() string {
 func (x *UpdateSeatBookingRequest) GetNewSeatId() string {
 	if x != nil {
 		return x.NewSeatId
+	}
+	return ""
+}
+
+func (x *UpdateSeatBookingRequest) GetNewSectionId() string {
+	if x != nil {
+		return x.NewSectionId
 	}
 	return ""
 }
@@ -760,19 +784,22 @@ const file_proto_booking_proto_rawDesc = "" +
 	"\x13ShowReceiptResponse\x12*\n" +
 	"\areceipt\x18\x01 \x03(\v2\x10.booking.ReceiptR\areceipt\"?\n" +
 	"\x1fGetSectionBookingDetailsRequest\x12\x1c\n" +
-	"\tsectionId\x18\x01 \x01(\tR\tsectionId\"\x8e\x01\n" +
+	"\tsectionId\x18\x01 \x01(\tR\tsectionId\"\xce\x01\n" +
 	"\vSeatBooking\x12\x16\n" +
 	"\x06seatId\x18\x01 \x01(\tR\x06seatId\x12\x1e\n" +
 	"\n" +
 	"SeatNumber\x18\x02 \x01(\tR\n" +
-	"SeatNumber\x12!\n" +
-	"\x04user\x18\x03 \x01(\v2\r.booking.UserR\x04user\x12$\n" +
-	"\rSeatAvailable\x18\x04 \x01(\bR\rSeatAvailable\"\\\n" +
+	"SeatNumber\x12\x1c\n" +
+	"\tSectionId\x18\x03 \x01(\tR\tSectionId\x12 \n" +
+	"\vSectionName\x18\x04 \x01(\tR\vSectionName\x12!\n" +
+	"\x04user\x18\x05 \x01(\v2\r.booking.UserR\x04user\x12$\n" +
+	"\rSeatAvailable\x18\x06 \x01(\bR\rSeatAvailable\"\\\n" +
 	" GetSectionBookingDetailsResponse\x128\n" +
-	"\fseatBookings\x18\x01 \x03(\v2\x14.booking.SeatBookingR\fseatBookings\"V\n" +
+	"\fseatBookings\x18\x01 \x03(\v2\x14.booking.SeatBookingR\fseatBookings\"z\n" +
 	"\x18UpdateSeatBookingRequest\x12\x1c\n" +
 	"\tReceiptId\x18\x01 \x01(\tR\tReceiptId\x12\x1c\n" +
-	"\tNewSeatId\x18\x02 \x01(\tR\tNewSeatId\"U\n" +
+	"\tNewSeatId\x18\x02 \x01(\tR\tNewSeatId\x12\"\n" +
+	"\fNewSectionId\x18\x03 \x01(\tR\fNewSectionId\"U\n" +
 	"\x19UpdateSeatBookingResponse\x128\n" +
 	"\x0eUpdatedReceipt\x18\x01 \x01(\v2\x10.booking.ReceiptR\x0eUpdatedReceipt\"4\n" +
 	"\x14DeleteBookingRequest\x12\x1c\n" +

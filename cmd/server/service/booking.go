@@ -22,6 +22,7 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 		return nil, fmt.Errorf("Invalid Booking Request")
 	}
 	user := s.ParseUser(req.User)
+
 	//Allocate the seat in the available section
 	seatId, sectionId := s.AllocateSeat(user)
 	if seatId == "" || sectionId == "" {
@@ -41,6 +42,8 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 		SectionName:   dataStore.GetSection(s.Store, sectionId).Name,
 		BookingStatus: "Confirmed",
 	}
+	//Update User Store Receipts
+	dataStore.UpdateUserReceipts(s.Store, user.Id, receipt)
 	user.Receipts = append(user.Receipts, receipt)
 	s.Store.Receipts[receipt.Id] = *receipt
 
@@ -66,7 +69,6 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 	return response, nil
 }
 func (s *BookingServer) ShowReceipt(ctx context.Context, req *pb.ShowReceiptRequest) (*pb.ShowReceiptResponse, error) {
-
 	//check if request is valid
 	if req == nil || req.UserId == "" {
 		return nil, fmt.Errorf("Invalid Receipt Request")
@@ -77,15 +79,11 @@ func (s *BookingServer) ShowReceipt(ctx context.Context, req *pb.ShowReceiptRequ
 	if user == nil {
 		return nil, fmt.Errorf("User not found")
 	}
-	if len(user.Receipts) == 0 {
-		return nil, fmt.Errorf("no receipts found for the user")
-	}
 	//map the user receipts to response struct
 	response := s.MapUserReceipts(user.Receipts, user)
 
 	return response, nil
 }
-
 func (s *BookingServer) GetSectionBookingDetails(ctx context.Context, req *pb.GetSectionBookingDetailsRequest) (*pb.GetSectionBookingDetailsResponse, error) {
 	if req == nil || req.SectionId == "" {
 		return nil, fmt.Errorf("invalid Show Section-Bookings Request")
@@ -102,6 +100,8 @@ func (s *BookingServer) GetSectionBookingDetails(ctx context.Context, req *pb.Ge
 		seatDetails := &pb.SeatBooking{
 			SeatId:        seat.Id,
 			SeatNumber:    seat.SeatNumber,
+			SectionId:     seat.SectionId,
+			SectionName:   seat.SectionName,
 			SeatAvailable: seat.SeatAvailable,
 		}
 		if seat.User != nil {
@@ -121,13 +121,14 @@ func (s *BookingServer) GetSectionBookingDetails(ctx context.Context, req *pb.Ge
 	}
 	return response, nil
 }
-
 func (s *BookingServer) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest) (*pb.DeleteBookingResponse, error) {
 
 	//check if request is valid
 	if req == nil || req.ReceiptId == "" {
 		return nil, fmt.Errorf("invalid Delete Booking Request")
 	}
+
+	//validate the receipt
 	receipt, err := dataStore.CheckValidReceipt(s.Store, req.ReceiptId)
 	if err != nil {
 		return nil, fmt.Errorf("receipt not found: %v", err)
@@ -136,21 +137,20 @@ func (s *BookingServer) DeleteBooking(ctx context.Context, req *pb.DeleteBooking
 	if receipt.BookingStatus == "Cancelled" {
 		return nil, fmt.Errorf("your booking is already cancelled")
 	}
-	userId := receipt.UserId
-	cancelSeatId := receipt.SeatId
-	cancelSectionId := receipt.SectionId
 
-	seat := dataStore.GetSeat(s.Store, cancelSeatId, cancelSectionId)
-	//Update Train-seat models
+	//Get the seat details from the receipt details
+	seat := dataStore.GetSeat(s.Store, receipt.SeatId, receipt.SectionId)
+
+	//Reset Seat status to available
 	seat.SeatAvailable = true
 	seat.User = nil
 
 	//Update the section Seat Availability count
-	section := dataStore.GetSection(s.Store, cancelSectionId)
+	section := dataStore.GetSection(s.Store, receipt.SectionId)
 	section.AvailableSeats--
 
 	//Update users store Receipts for cancellation
-	user := dataStore.GetUser(s.Store, userId)
+	user := dataStore.GetUser(s.Store, receipt.UserId)
 	if user != nil {
 		for _, receipt := range user.Receipts {
 			if receipt.Id == req.ReceiptId {
@@ -162,6 +162,7 @@ func (s *BookingServer) DeleteBooking(ctx context.Context, req *pb.DeleteBooking
 
 	//Mark booking status in the receipts store
 	dataStore.CancelReceiptsFromStore(s.Store, req.ReceiptId)
+
 	//Response structure
 	response := &pb.DeleteBookingResponse{
 		DeleteStatus: true,
@@ -169,10 +170,9 @@ func (s *BookingServer) DeleteBooking(ctx context.Context, req *pb.DeleteBooking
 
 	return response, nil
 }
-
 func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSeatBookingRequest) (*pb.UpdateSeatBookingResponse, error) {
 
-	if req == nil || req.ReceiptId == "" || req.NewSeatId == "" {
+	if req == nil || req.ReceiptId == "" || req.NewSeatId == "" || req.NewSectionId == "" {
 		return nil, fmt.Errorf("Invalid Update-Seat Booking Request")
 	}
 	receipt, err := dataStore.CheckValidReceipt(s.Store, req.ReceiptId)
@@ -184,7 +184,7 @@ func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSea
 	}
 	user := dataStore.GetUser(s.Store, receipt.UserId)
 	//Check if the new seat is available
-	newSeat := dataStore.GetSeat(s.Store, req.NewSeatId, receipt.SectionId)
+	newSeat := dataStore.GetSeat(s.Store, req.NewSeatId, req.NewSectionId)
 	if newSeat == nil || !newSeat.SeatAvailable {
 		return nil, fmt.Errorf("requested seat is not available")
 	}
@@ -201,6 +201,7 @@ func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSea
 		oldSeat.SeatAvailable = true
 		oldSeat.User = nil
 	}
+
 	oldSeatSection := dataStore.GetSection(s.Store, receipt.SectionId)
 	oldSeatSection.AvailableSeats++
 
@@ -230,7 +231,6 @@ func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSea
 			}
 			break
 		}
-
 	}
 
 	//Response structure
@@ -297,7 +297,7 @@ func (s *BookingServer) AllocateSeat(user *models.User) (string, string) {
 			}
 		}
 	}
-	return "", "" // No available seats found
+	return "", ""
 }
 func (s *BookingServer) GetNextAvailableSeat(section *models.Section) string {
 
@@ -306,7 +306,7 @@ func (s *BookingServer) GetNextAvailableSeat(section *models.Section) string {
 			return seat.Id // Return the first available seat
 		}
 	}
-	return "" // No available seats found
+	return ""
 }
 func (s *BookingServer) ParseUser(user *pb.User) *models.User {
 	if user == nil {
@@ -319,5 +319,3 @@ func (s *BookingServer) ParseUser(user *pb.User) *models.User {
 		Email:     user.GetEmail(),
 	}
 }
-
-//

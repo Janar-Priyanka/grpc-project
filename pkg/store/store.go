@@ -11,6 +11,7 @@ func GetSectionStore(store *models.Store) []*models.Section {
 }
 func GetSeat(store *models.Store, seatId string, sectionId string) *models.Seat {
 	section := GetSection(store, sectionId)
+
 	for _, seat := range section.Seats {
 		if seat.Id == seatId {
 			return seat
@@ -55,4 +56,14 @@ func CancelReceiptsFromStore(store *models.Store, receiptId string) {
 		receipt.BookingStatus = "Cancelled"
 		store.Receipts[receiptId] = receipt
 	}
+}
+func UpdateUserReceipts(store *models.Store, userId string, receipt *models.Receipt) {
+
+	for _, user := range store.Users {
+		if user.Id == userId {
+			user.Receipts = append(user.Receipts, receipt)
+			return
+		}
+	}
+
 }

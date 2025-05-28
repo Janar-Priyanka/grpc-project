@@ -53,8 +53,10 @@ message GetSectionBookingDetailsRequest {
 message SeatBooking {
     string seatId = 1;
     string SeatNumber = 2;
-    User user = 3;
-    bool SeatAvailable = 4;
+    string SectionId = 3;
+    string SectionName = 4;
+    User user = 5;
+    bool SeatAvailable = 6;
 }
 message GetSectionBookingDetailsResponse {
     repeated SeatBooking seatBookings = 1;
@@ -63,6 +65,7 @@ message GetSectionBookingDetailsResponse {
 message UpdateSeatBookingRequest {
     string ReceiptId = 1;
     string NewSeatId = 2;
+    string NewSectionId = 3;
 }
 message UpdateSeatBookingResponse {
     Receipt UpdatedReceipt = 1;

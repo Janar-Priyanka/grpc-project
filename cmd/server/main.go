@@ -28,9 +28,10 @@ func init() {
 	seatCount := 20
 	price := 20
 
+
 	for i := 0; i < sectionCount; i++ {
 		section := &models.Section{
-			Id:             uuid.New().String(),
+			Id:             "S" + fmt.Sprint(i+1),
 			Name:           "Section " + fmt.Sprint(i+1),
 			Seats:          make([]*models.Seat, seatCount),
 			AvailableSeats: seatCount,
@@ -53,16 +54,18 @@ func init() {
 
 	//Create User
 	alice := &models.User{
-		Id:        uuid.New().String(),
+		Id:        "1",
 		FirstName: "Alice",
 		LastName:  "Smith",
 		Email:     "alicewonderland@gmal.com",
+		Receipts:  []*models.Receipt{},
 	}
 	bob := &models.User{
-		Id:        uuid.New().String(),
+		Id:        "2",
 		FirstName: "Bob",
 		LastName:  "Johnson",
 		Email:     "bobthebuilder@gmail.com",
+		Receipts:  []*models.Receipt{},
 	}
 	Store.Users = append(Store.Users, alice, bob)
 	Store.Train.Price = float32(price)
@@ -87,22 +90,6 @@ func main() {
 	pb.RegisterBookingServiceServer(s, bookingService)
 
 	reflection.Register(s)
-
-	// ctx := context.Background()
-	// purchasebookingRequest := &pb.PurchaseBookingRequest{
-	// 	From: "London",
-	// 	To:   "France",
-	// 	User: &pb.User{
-	// 		UserId:    bookingService.Store.Users[0].Id,
-	// 		FirstName: "Alice",
-	// 		LastName:  "Smith",
-	// 		Email:     "AliceSmith@gmaiil.com",
-	// 	},
-	// 	PricePaid: 20.0,
-	// }
-	// res, _ := bookingService.PurchaseBooking(ctx, purchasebookingRequest)
-	// fmt.Println("Response:", res.Receipt.Seat)
-	// fmt.Println("Response  Section:", res.Receipt.Section)
 
 	log.Println("Server is running on port %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
