@@ -10,25 +10,39 @@ This project is a gRPC-based application for managing seat bookings in a train r
 - **Receipt Management**: Retrieve and display user receipts.
 - **Seat Availability**: Check and manage seat availability in different sections.
 
+---
+### Test Coverage
+- Test Location - cmd/server/service/booking_test.go
+- Coverage - **95.8%**
+  ![Coverage](./docs/coverage.png)
+- Coverage Location - /coverage-report
+___
+
+### Diagram - Sequence
+![Sequence](./docs/sequence.png)
+
 ## Project Structure
 
+- `cmd/server/main.go`: The entry point for the gRPC server, initializing the service and starting the server.
+- `cmd/client/main.go`: The entry point for the Client.
 - `cmd/server/service/booking.go`: Contains the core gRPC service logic for handling seat bookings and user interactions.
 - `pkg/store/store.go`: Provides helper functions for interacting with the in-memory data store, such as retrieving sections, seats, users, and receipts.
 - `cmd/server/models`: Defines the data models used in the application.
-- `cmd/server/main.go`: The entry point for the gRPC server, initializing the service and starting the server.
+- `booking/proto`: Generated Protocol Buffers files for the gRPC service.
 - `cmd/server/proto/booking.proto`: The Protocol Buffers definition for the gRPC service, defining the RPC methods and message types used in the application.
 
 ## Data Models
-- User: Represents a user with details like Id, First Name, Last Name and Email.
-- Seat: Represents a seat with details like ID, Seat Availability , Section Id , Section Name and associated user.
-- Section: Represents a train section with details like ID, name, and available seats.
-- Receipt: Represents a booking receipt with details like ID, From , To, Email, seat, section, and booking status.
+- User: Represents a user with details like Id, First Name, Last Name, Email and Receipts of the User.
+- Seat: Represents a seat with details like ID, Seat Availability , Section Id , Section Name, Seat Number and associated user.
+- Section: Represents a train section with details like ID, name, and  seats associated with it.
+- Receipt: Represents a booking receipt with details like ID, From , To, Email, seat, section, price paid and booking status.
 
 ## gRPC Methods
 
 ### Update Seat Booking
 **Method**: `UpdateSeatBooking`  
 **Description**: Updates an existing booking by assigning a new seat to the user.  
+
 **Request**:
 - `ReceiptId` (string): The ID of the receipt to update.
 - `NewSeatId` (string): The ID of the new seat to allocate.  
@@ -42,6 +56,7 @@ This project is a gRPC-based application for managing seat bookings in a train r
 ### Allocate Seat
 **Method**: `PurchaseBooking`  
 **Description**: Automatically allocates the next available seat to a user based on seat availability.  
+
 **Request**:
 - `User` (object): The user details for whom the seat is being allocated.
 - `From` (string): The details of users boarding point.
@@ -57,6 +72,7 @@ This project is a gRPC-based application for managing seat bookings in a train r
 ### Cancel Booking
 **Method**: `DeleteBooking`  
 **Description**: Cancels an existing booking and marks the seat as available.  
+
 **Request**:
 - `ReceiptId` (string): The ID of the receipt to cancel.  
   
@@ -68,6 +84,7 @@ This project is a gRPC-based application for managing seat bookings in a train r
 ### Retrieve Receipts
 **Method**: `ShowReceipts`  
 **Description**: Retrieves all booking receipts for a specific user.  
+
 **Request**:
 - `UserId` (string): The ID of the user whose receipts are to be retrieved.  
   
@@ -79,6 +96,7 @@ This project is a gRPC-based application for managing seat bookings in a train r
 ### Get Section Booking Details
 **Method**: `GetSectionBookingDetails`  
 **Description**: Retrieves booking details for all seats in a specific section.  
+
 **Request**:
 - `SectionId` (string): The ID of the section to retrieve booking details for.  
   
@@ -87,13 +105,4 @@ This project is a gRPC-based application for managing seat bookings in a train r
 
 ---
 
-### Test Coverage
-- Test Location - cmd/server/service/booking_test.go
-- Coverage - **95.8%**
- ![Coverage](./docs/coverage.png)
-- Coverage Location - /coverage-report
-
----
-### Diagram - Sequence
-![Sequence](./docs/sequence.png)
 
