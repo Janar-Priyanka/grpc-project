@@ -11,22 +11,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func main() {
-	// Connect to the gRPC server
-	conn, err := grpc.NewClient("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Failed to connect to server: %v", err)
-	}
-	defer conn.Close()
-
-	// Create BookingService client
-	client := pb.NewBookingServiceClient(conn)
-	fmt.Println("Connected to gRPC server at localhost:8080")
-
-	ctx := context.Background()
-
-	// Step 1: Purchase a ticket for Bob
-	fmt.Println("\n ********* Step 1: Purchasing a ticket for Bob  **********")
+func PurchasingTicket(client pb.BookingServiceClient, ctx context.Context) string {
 	purchaseReq := &pb.PurchaseBookingRequest{
 		From: "London",
 		To:   "France",
@@ -49,11 +34,13 @@ func main() {
 	fmt.Printf("From: %s, To: %s\n", purchaseResp.Receipt.From, purchaseResp.Receipt.To)
 	fmt.Printf("Seat: %s, Section: %s\n", purchaseResp.Receipt.Seat, purchaseResp.Receipt.Section)
 	fmt.Printf("Price Paid: $%.2f, Status: %s\n", purchaseResp.Receipt.PricePaid, purchaseResp.Receipt.BookingStatus)
+	return receiptId
 
-	// Step 2: Show Bob's receipts
-	fmt.Println("\n ******* Step 2: Showing Bob's receipts *******")
+}
+
+func ShowReceipts(client pb.BookingServiceClient, ctx context.Context, userId string) {
 	showReq := &pb.ShowReceiptRequest{
-		UserId: "2",
+		UserId: userId,
 	}
 	showResp, err := client.ShowReceipt(ctx, showReq)
 	if err != nil {
@@ -67,9 +54,9 @@ func main() {
 		fmt.Printf("  Seat: %s, Section: %s\n", receipt.Seat, receipt.Section)
 		fmt.Printf("  Price Paid: $%.2f, Status: %s\n", receipt.PricePaid, receipt.BookingStatus)
 	}
+}
 
-	// Step 3: Get section booking details for Section 1
-	fmt.Println("\n  ******* Step 3: Getting booking details for Section 1 *******")
+func getSectionBookingDetails(client pb.BookingServiceClient, ctx context.Context, sectionId string) []*pb.SeatBooking {
 	getSectionReq := &pb.GetSectionBookingDetailsRequest{
 		SectionId: "S1",
 	}
@@ -83,31 +70,17 @@ func main() {
 		if seat.User != nil {
 			userInfo = fmt.Sprintf("%s %s (%s)", seat.User.FirstName, seat.User.LastName, seat.User.UserId)
 		}
-		fmt.Printf("- Seat %s (ID: %s), Available: %v, User: %s\n",
+		fmt.Printf("- Seat Number %s (ID: %s), Available: %v, User: %s\n",
 			seat.SeatNumber, seat.SeatId, seat.SeatAvailable, userInfo)
 	}
+	return getSectionResp.SeatBookings
+}
 
-	// Step 4: Find available seat in Section 2 and update booking
-	fmt.Println("\n ******* Step 4: Finding available seat in Section 2 ******")
-	getSection2Req := &pb.GetSectionBookingDetailsRequest{
-		SectionId: "S2",
-	}
-	getSection2Resp, err := client.GetSectionBookingDetails(ctx, getSection2Req)
-	if err != nil {
-		log.Fatalf("GetSectionBookingDetails for Section 2 failed: %v", err)
-	}
-	for _, seat := range getSection2Resp.SeatBookings {
-		userInfo := "None"
-		if seat.User != nil {
-			userInfo = fmt.Sprintf("%s %s (%s)", seat.User.FirstName, seat.User.LastName, seat.User.UserId)
-		}
-		fmt.Printf("- Seat %s (ID: %s), Available: %v, User: %s\n",
-			seat.SeatNumber, seat.SeatId, seat.SeatAvailable, userInfo)
-	}
+func findNextAvailableSeatFromSection(seats []*pb.SeatBooking) (string, string) {
 	var newSeatId string
 	var newSeatNumber string
 	var newSectionId string
-	for _, seat := range getSection2Resp.SeatBookings {
+	for _, seat := range seats {
 		if seat.SeatAvailable {
 			newSeatId = seat.SeatId
 			newSeatNumber = seat.SeatNumber
@@ -116,11 +89,11 @@ func main() {
 			break
 		}
 	}
-	if newSeatId == "" {
-		log.Fatal("No available seats found in Section 2")
-	}
 
-	fmt.Println("\n ******** Step 4: Updating booking to new seat ********")
+	return newSeatId, newSectionId
+}
+
+func updateBooking(client pb.BookingServiceClient, ctx context.Context, receiptId, newSeatId, newSectionId string) {
 	updateReq := &pb.UpdateSeatBookingRequest{
 		ReceiptId:    receiptId,
 		NewSeatId:    newSeatId,
@@ -136,9 +109,8 @@ func main() {
 	fmt.Printf("From: %s, To: %s\n", updateResp.UpdatedReceipt.From, updateResp.UpdatedReceipt.To)
 	fmt.Printf("Seat: %s, Section: %s\n", updateResp.UpdatedReceipt.Seat, updateResp.UpdatedReceipt.Section)
 	fmt.Printf("Price Paid: $%.2f, Status: %s\n", updateResp.UpdatedReceipt.PricePaid, updateResp.UpdatedReceipt.BookingStatus)
-
-	// Step 5: Delete booking
-	fmt.Println("\n *********** Step 5: Deleting booking ***********")
+}
+func DeleteBooking(client pb.BookingServiceClient, ctx context.Context, receiptId string) {
 	deleteReq := &pb.DeleteBookingRequest{
 		ReceiptId: receiptId,
 	}
@@ -147,4 +119,57 @@ func main() {
 		log.Fatalf("DeleteBooking failed: %v", err)
 	}
 	fmt.Printf("Deletion successful! Status: %v\n", deleteResp.DeleteStatus)
+}
+
+func main() {
+	// Connect to the gRPC server
+	conn, err := grpc.NewClient("localhost:8080", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to server: %v", err)
+	}
+	defer conn.Close()
+
+	// Create BookingService client
+	client := pb.NewBookingServiceClient(conn)
+	fmt.Println("Connected to gRPC server at localhost:8080")
+
+	ctx := context.Background()
+
+	// Step 1: Purchase a ticket for Bob
+	fmt.Println("\n ********* Step 1: Purchasing a ticket for Bob  **********")
+	receiptId := PurchasingTicket(client, ctx)
+	// Step 2: Show Bob's receipts
+	fmt.Println("\n ******* Step 2: Showing Bob's receipts *******")
+	ShowReceipts(client, ctx, "2")
+
+	// Step 3: Get section booking details for Section 1
+	fmt.Println("\n  ******* Step 3: Getting booking details for Section 1 *******")
+	_ = getSectionBookingDetails(client, ctx, "S1")
+	// Step 4: Find available seat in Section 2 and update booking
+	fmt.Println("\n ******* Step 4: Finding available seat in Section 2 ******")
+	section2SeatBookings := getSectionBookingDetails(client, ctx, "S2")
+
+	// Find an available seat in Section 2
+	newSeatId, newSectionId := findNextAvailableSeatFromSection(section2SeatBookings)
+
+	if newSeatId == "" || newSectionId == "" {
+		log.Fatal("No available seats found in Section 2")
+	}
+
+	fmt.Println("\n ******** Step 4: Updating booking to new seat ********")
+	updateBooking(client, ctx, receiptId, newSeatId, newSectionId)
+
+	// Step 5: Delete booking
+	fmt.Println("\n *********** Step 5: Deleting booking ***********")
+	DeleteBooking(client, ctx, receiptId)
+
+	/** Edge Cases to test when user is trying to modify users seat or cancel the booking again
+	/* Uncomment the below use case one by one to test the edge cases
+	*/
+	// fmt.Println("\n *********** Update Seat booking with cancelled Receipt Id ! ***********")
+	// updateBooking(client, ctx, receiptId, "a6a3aa98-822c-4fdf-bdcd-8578af42b825", "S2")
+
+	// fmt.Println("\n *********** Deleting booking with cancelled Receipt Id ! ***********")
+	// DeleteBooking(client, ctx, receiptId)
+
 }

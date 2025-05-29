@@ -180,7 +180,7 @@ func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSea
 		return nil, fmt.Errorf("receipt not found: %v", err)
 	}
 	if receipt.BookingStatus == "Cancelled" {
-		return nil, fmt.Errorf("your booking is cancelled, hence cannot update user booking")
+		return nil, fmt.Errorf("your booking is already cancelled, hence cannot update user seat")
 	}
 	user := dataStore.GetUser(s.Store, receipt.UserId)
 	//Check if the new seat is available
