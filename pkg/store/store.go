@@ -5,12 +5,27 @@ import (
 	"grpc-project/cmd/server/models"
 )
 
-func GetSectionStore(store *models.Store) []*models.Section {
-	return store.Train.Sections
-	// No sections found
+func GetSelectedTrainFromStore(store *models.Store, trainId string) *models.Train {
+	trains := store.Trains
+	if len(trains) > 0 {
+		for _, train := range trains {
+			if train.Id == trainId {
+				return train
+			}
+		}
+	}
+	return nil
 }
-func GetSeat(store *models.Store, seatId string, sectionId string) *models.Seat {
-	section := GetSection(store, sectionId)
+func GetSectionStore(store *models.Store, trainId string) []*models.Section {
+	train := GetSelectedTrainFromStore(store, trainId)
+	if train != nil {
+		return train.Sections
+	}
+
+	return nil
+}
+func GetSeat(store *models.Store, trainId string, seatId string, sectionId string) *models.Seat {
+	section := GetRequestedSection(store, sectionId, trainId)
 
 	for _, seat := range section.Seats {
 		if seat.Id == seatId {
@@ -19,8 +34,10 @@ func GetSeat(store *models.Store, seatId string, sectionId string) *models.Seat 
 	}
 	return nil // Seat not found
 }
-func GetSection(store *models.Store, id string) *models.Section {
-	for _, section := range store.Train.Sections {
+func GetRequestedSection(store *models.Store, id string, trainId string) *models.Section {
+	train := GetSelectedTrainFromStore(store, trainId)
+	fmt.Println("****** train :", train)
+	for _, section := range train.Sections {
 		if section.Id == id {
 			return section
 		}
@@ -40,10 +57,12 @@ func GetUser(store *models.Store, userId string) *models.User {
 }
 
 func GetPrice(store *models.Store, trainId string) float32 {
-	if store != nil && store.Train.Id == trainId {
-		return store.Train.Price
+	train := GetSelectedTrainFromStore(store, trainId)
+	if store == nil || trainId == "" || train == nil {
+		return 0.0 // Return 0 if train not found or price not set
 	}
-	return 0.0 // Return 0 if train not found or price not set
+
+	return train.Price
 }
 func CheckValidReceipt(store *models.Store, receiptId string) (*models.Receipt, error) {
 	if receipt, exists := store.Receipts[receiptId]; exists {
@@ -57,13 +76,13 @@ func CancelReceiptsFromStore(store *models.Store, receiptId string) {
 		store.Receipts[receiptId] = receipt
 	}
 }
-func UpdateUserReceipts(store *models.Store, userId string, receipt *models.Receipt) {
+func UpdateUserReceipts(store *models.Store, userId string, receipt *models.Receipt) *models.Store {
 
 	for _, user := range store.Users {
 		if user.Id == userId {
 			user.Receipts = append(user.Receipts, receipt)
-			return
 		}
 	}
+	return store
 
 }

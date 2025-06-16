@@ -4,6 +4,7 @@ type Receipt struct {
 	Id            string
 	From          string
 	To            string
+	TrainId       string
 	Email         string
 	SeatNumber    string
 	SectionName   string
@@ -46,7 +47,7 @@ type Train struct {
 }
 
 type Store struct {
-	Train    Train
+	Trains   []*Train
 	Users    []*User
 	Receipts map[string]Receipt
 }

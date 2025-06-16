@@ -1,24 +1,18 @@
 package main
 
 import (
+	"fmt"
 	pb "grpc-project/booking/proto"
 	"grpc-project/cmd/server/models"
 	"grpc-project/cmd/server/service"
 	"log"
 	"net"
 
-	"fmt"
-
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-var Store = &models.Store{
-	Train: models.Train{
-		Id: uuid.New().String(),
-	},
-}
+var Store = &models.Store{}
 
 func init() {
 	//Initialize Store Data structure
@@ -26,33 +20,16 @@ func init() {
 
 	sectionCount := 2
 	seatCount := 20
-	price := 20
+	// price := 20
+	from := "London"
+	to := "France"
 
-
-	for i := 0; i < sectionCount; i++ {
-		section := &models.Section{
-			Id:             "S" + fmt.Sprint(i+1),
-			Name:           "Section " + fmt.Sprint(i+1),
-			Seats:          make([]*models.Seat, seatCount),
-			AvailableSeats: seatCount,
-		}
-
-		for j := 0; j < seatCount; j++ {
-			seat := &models.Seat{
-				Id:            uuid.New().String(),
-				SectionName:   section.Name,
-				SectionId:     section.Id,
-				SeatNumber:    "Seat " + fmt.Sprint(j+1),
-				SeatAvailable: true,
-				User:          nil,
-			}
-			section.Seats[j] = seat
-		}
-		Store.Train.Sections = append(Store.Train.Sections, section)
-
+	Store, err := service.GenerateNewTrain(Store, sectionCount, seatCount, from, to, 20.0)
+	if err != nil {
+		fmt.Errorf("Error creating new train %w ", err)
 	}
 
-	//Create User
+	//Create User GenerateNewTrain(
 	alice := &models.User{
 		Id:        "1",
 		FirstName: "Alice",
@@ -68,7 +45,6 @@ func init() {
 		Receipts:  []*models.Receipt{},
 	}
 	Store.Users = append(Store.Users, alice, bob)
-	Store.Train.Price = float32(price)
 	Store.Receipts = make(map[string]models.Receipt)
 }
 

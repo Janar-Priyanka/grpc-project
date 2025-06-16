@@ -13,8 +13,9 @@ import (
 
 func PurchasingTicket(client pb.BookingServiceClient, ctx context.Context) string {
 	purchaseReq := &pb.PurchaseBookingRequest{
-		From: "London",
-		To:   "France",
+		From:    "London",
+		To:      "France",
+		TrainId: "T1",
 		User: &pb.User{
 			UserId:    "2",
 			FirstName: "Bob",
@@ -30,6 +31,7 @@ func PurchasingTicket(client pb.BookingServiceClient, ctx context.Context) strin
 	receiptId := purchaseResp.Receipt.ReceiptId
 	fmt.Printf("Purchase successful!\n")
 	fmt.Printf("Receipt ID: %s\n", receiptId)
+	fmt.Printf("Train ID: %s\n", purchaseResp.Receipt.TrainId)
 	fmt.Printf("User: %s %s (%s)\n", purchaseResp.Receipt.User.FirstName, purchaseResp.Receipt.User.LastName, purchaseResp.Receipt.User.UserId)
 	fmt.Printf("From: %s, To: %s\n", purchaseResp.Receipt.From, purchaseResp.Receipt.To)
 	fmt.Printf("Seat: %s, Section: %s\n", purchaseResp.Receipt.Seat, purchaseResp.Receipt.Section)
@@ -51,14 +53,17 @@ func ShowReceipts(client pb.BookingServiceClient, ctx context.Context, userId st
 		fmt.Printf("- Receipt ID: %s\n", receipt.ReceiptId)
 		fmt.Printf("  User: %s %s (%s)\n", receipt.User.FirstName, receipt.User.LastName, receipt.User.UserId)
 		fmt.Printf("  From: %s, To: %s\n", receipt.From, receipt.To)
+		fmt.Printf("  Train ID: %s\n", receipt.TrainId)
 		fmt.Printf("  Seat: %s, Section: %s\n", receipt.Seat, receipt.Section)
 		fmt.Printf("  Price Paid: $%.2f, Status: %s\n", receipt.PricePaid, receipt.BookingStatus)
+		fmt.Printf("\n")
 	}
 }
 
 func getSectionBookingDetails(client pb.BookingServiceClient, ctx context.Context, sectionId string) []*pb.SeatBooking {
 	getSectionReq := &pb.GetSectionBookingDetailsRequest{
 		SectionId: "S1",
+		TrainId:   "T1",
 	}
 	getSectionResp, err := client.GetSectionBookingDetails(ctx, getSectionReq)
 	if err != nil {
@@ -98,6 +103,7 @@ func updateBooking(client pb.BookingServiceClient, ctx context.Context, receiptI
 		ReceiptId:    receiptId,
 		NewSeatId:    newSeatId,
 		NewSectionId: newSectionId,
+		NewTrainId:   "T1",
 	}
 	updateResp, err := client.UpdateSeatBooking(ctx, updateReq)
 	if err != nil {
@@ -107,6 +113,7 @@ func updateBooking(client pb.BookingServiceClient, ctx context.Context, receiptI
 	fmt.Printf("Updated Receipt ID: %s\n", updateResp.UpdatedReceipt.ReceiptId)
 	fmt.Printf("User: %s %s (%s)\n", updateResp.UpdatedReceipt.User.FirstName, updateResp.UpdatedReceipt.User.LastName, updateResp.UpdatedReceipt.User.UserId)
 	fmt.Printf("From: %s, To: %s\n", updateResp.UpdatedReceipt.From, updateResp.UpdatedReceipt.To)
+	fmt.Printf("Train Id: %s\n", updateResp.UpdatedReceipt.TrainId)
 	fmt.Printf("Seat: %s, Section: %s\n", updateResp.UpdatedReceipt.Seat, updateResp.UpdatedReceipt.Section)
 	fmt.Printf("Price Paid: $%.2f, Status: %s\n", updateResp.UpdatedReceipt.PricePaid, updateResp.UpdatedReceipt.BookingStatus)
 }

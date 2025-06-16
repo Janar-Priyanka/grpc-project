@@ -22,6 +22,7 @@ message PurchaseBookingRequest {
     string To = 2;
     User user = 3;
     float PricePaid = 4;
+    string TrainId = 5;
 }
 
 message Receipt {
@@ -33,6 +34,7 @@ message Receipt {
     string Section = 6;
     string Seat = 7;
     string BookingStatus = 8;
+    string TrainId = 9;
 }
 
 message PurchaseBookingResponse {
@@ -49,7 +51,9 @@ message ShowReceiptResponse{
 
 message GetSectionBookingDetailsRequest {
     string sectionId = 1;
+    string TrainId = 2;
 }
+
 message SeatBooking {
     string seatId = 1;
     string SeatNumber = 2;
@@ -66,6 +70,7 @@ message UpdateSeatBookingRequest {
     string ReceiptId = 1;
     string NewSeatId = 2;
     string NewSectionId = 3;
+    string NewTrainId = 4;
 }
 message UpdateSeatBookingResponse {
     Receipt UpdatedReceipt = 1;
