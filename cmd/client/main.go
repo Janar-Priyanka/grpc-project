@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	pb "grpc-project/booking/proto"
 
@@ -11,31 +12,26 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func PurchasingTicket(client pb.BookingServiceClient, ctx context.Context) string {
+func PurchasingTicket(client pb.BookingServiceClient, ctx context.Context, user *pb.User, wg *sync.WaitGroup, result chan *pb.PurchaseBookingResponse) {
+	defer wg.Done()
+
 	purchaseReq := &pb.PurchaseBookingRequest{
 		From: "London",
 		To:   "France",
 		User: &pb.User{
-			UserId:    "2",
-			FirstName: "Bob",
-			LastName:  "Johnson",
-			Email:     "bobthebuilder@gmail.com",
+			UserId:    user.UserId,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
 		},
 		PricePaid: 20.0,
 	}
 	purchaseResp, err := client.PurchaseBooking(ctx, purchaseReq)
 	if err != nil {
-		log.Fatalf("PurchaseBooking failed: %v", err)
+		log.Printf("PurchaseBooking failed for user %s: %v", user.UserId, err)
+		return
 	}
-	receiptId := purchaseResp.Receipt.ReceiptId
-	fmt.Printf("Purchase successful!\n")
-	fmt.Printf("Receipt ID: %s\n", receiptId)
-	fmt.Printf("User: %s %s (%s)\n", purchaseResp.Receipt.User.FirstName, purchaseResp.Receipt.User.LastName, purchaseResp.Receipt.User.UserId)
-	fmt.Printf("From: %s, To: %s\n", purchaseResp.Receipt.From, purchaseResp.Receipt.To)
-	fmt.Printf("Seat: %s, Section: %s\n", purchaseResp.Receipt.Seat, purchaseResp.Receipt.Section)
-	fmt.Printf("Price Paid: $%.2f, Status: %s\n", purchaseResp.Receipt.PricePaid, purchaseResp.Receipt.BookingStatus)
-	return receiptId
-
+	result <- purchaseResp
 }
 
 func ShowReceipts(client pb.BookingServiceClient, ctx context.Context, userId string) {
@@ -135,33 +131,79 @@ func main() {
 
 	ctx := context.Background()
 
-	// Step 1: Purchase a ticket for Bob
-	fmt.Println("\n ********* Step 1: Purchasing a ticket for Bob  **********")
-	receiptId := PurchasingTicket(client, ctx)
-	// Step 2: Show Bob's receipts
+	users := []*pb.User{
+		{
+			UserId:    "2",
+			FirstName: "Bob",
+			LastName:  "Johnson",
+			Email:     "bobthebuilder@gmail.com",
+		},
+		{
+			UserId:    "1",
+			FirstName: "Alice",
+			LastName:  "Smith",
+			Email:     "alicewonderland@gmal.com",
+		},
+		{
+			UserId:    "2",
+			FirstName: "Bob",
+			LastName:  "Johnson",
+			Email:     "bobthebuilder@gmail.com",
+		},
+	}
+	var wg sync.WaitGroup
+	results := make(chan *pb.PurchaseBookingResponse, len(users))
+
+	// Step 1: Purchase a ticket for multiple users
+	for _, user := range users {
+		wg.Add(1)
+		go PurchasingTicket(client, ctx, user, &wg, results)
+	}
+	// Wait for all purchases to complete
+	wg.Wait()
+	close(results)
+
+	// Process and display results
+	for purchaseResp := range results {
+		receipt := purchaseResp.Receipt
+		fmt.Printf("Purchase successful!\n ", receipt)
+		fmt.Printf("Receipt ID: %s\n", receipt.ReceiptId)
+		fmt.Printf("User: %s %s (%s)\n", receipt.User.FirstName, receipt.User.LastName, receipt.User.UserId)
+		fmt.Printf("From: %s, To: %s\n", receipt.From, receipt.To)
+		fmt.Printf("Seat: %s, Section: %s\n", receipt.Seat, receipt.Section)
+		fmt.Printf("Price Paid: $%.2f, Status: %s\n", receipt.PricePaid, receipt.BookingStatus)
+		fmt.Printf("\n")
+	}
+	// Step 2: Show receipts for a specific user (e.g., Bob)
 	fmt.Println("\n ******* Step 2: Showing Bob's receipts *******")
 	ShowReceipts(client, ctx, "2")
 
+	// fmt.Println("\n ********* Step 1: Purchasing a ticket for Bob  **********")
+	// receiptId := PurchasingTicket(client, ctx)
+	// // Step 2: Show Bob's receipts
+	// fmt.Println("\n ******* Step 2: Showing Bob's receipts *******")
+	// ShowReceipts(client, ctx, "2")
+
 	// Step 3: Get section booking details for Section 1
-	fmt.Println("\n  ******* Step 3: Getting booking details for Section 1 *******")
-	_ = getSectionBookingDetails(client, ctx, "S1")
-	// Step 4: Find available seat in Section 2 and update booking
-	fmt.Println("\n ******* Step 4: Finding available seat in Section 2 ******")
-	section2SeatBookings := getSectionBookingDetails(client, ctx, "S2")
+	// fmt.Println("\n  ******* Step 3: Getting booking details for Section 1 *******")
+	// _ = getSectionBookingDetails(client, ctx, "S1")
+	// // Step 4: Find available seat in Section 2 and update booking
+	// fmt.Println("\n ******* Step 4: Finding available seat in Section 2 ******")
+	// section2SeatBookings := getSectionBookingDetails(client, ctx, "S2")
 
-	// Find an available seat in Section 2
-	newSeatId, newSectionId := findNextAvailableSeatFromSection(section2SeatBookings)
+	// // Find an available seat in Section 2
+	// newSeatId, newSectionId := findNextAvailableSeatFromSection(section2SeatBookings)
 
-	if newSeatId == "" || newSectionId == "" {
-		log.Fatal("No available seats found in Section 2")
-	}
+	// if newSeatId == "" || newSectionId == "" {
+	// 	log.Fatal("No available seats found in Section 2")
+	// }
 
-	fmt.Println("\n ******** Step 4: Updating booking to new seat ********")
-	updateBooking(client, ctx, receiptId, newSeatId, newSectionId)
+	// fmt.Println("\n ******** Step 4: Updating booking to new seat ********")
+	// updateBooking(client, ctx, receiptId, newSeatId, newSectionId)
 
-	// Step 5: Delete booking
-	fmt.Println("\n *********** Step 5: Deleting booking ***********")
-	DeleteBooking(client, ctx, receiptId)
+	// // Step 5: Delete booking
+	// fmt.Println("\n *********** Step 5: Deleting booking ***********")
+	// DeleteBooking(client, ctx, receiptId)
 
 	/** Edge Cases to test when user is trying to modify users seat or cancel the booking again
 	/* Uncomment the below use case one by one to test the edge cases

@@ -6,6 +6,7 @@ import (
 	pb "grpc-project/booking/proto"
 	"grpc-project/cmd/server/models"
 	dataStore "grpc-project/pkg/store"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -13,6 +14,7 @@ import (
 type BookingServer struct {
 	pb.UnimplementedBookingServiceServer
 	Store *models.Store
+	mu    sync.RWMutex
 }
 
 func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBookingRequest) (*pb.PurchaseBookingResponse, error) {
@@ -21,6 +23,8 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 	if req == nil || req.User == nil || req.From == "" || req.To == "" {
 		return nil, fmt.Errorf("Invalid Booking Request")
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	user := s.ParseUser(req.User)
 
 	//Allocate the seat in the available section
@@ -73,6 +77,8 @@ func (s *BookingServer) ShowReceipt(ctx context.Context, req *pb.ShowReceiptRequ
 	if req == nil || req.UserId == "" {
 		return nil, fmt.Errorf("Invalid Receipt Request")
 	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	//Get the user details
 	user := dataStore.GetUser(s.Store, req.UserId)
@@ -92,6 +98,9 @@ func (s *BookingServer) GetSectionBookingDetails(ctx context.Context, req *pb.Ge
 	if section == nil {
 		return nil, fmt.Errorf("section not found for the given Section ID: %s", req.SectionId)
 	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	seatsList := section.Seats
 
 	// Map the section seats to response struct
@@ -137,6 +146,8 @@ func (s *BookingServer) DeleteBooking(ctx context.Context, req *pb.DeleteBooking
 	if receipt.BookingStatus == "Cancelled" {
 		return nil, fmt.Errorf("your booking is already cancelled")
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	//Get the seat details from the receipt details
 	seat := dataStore.GetSeat(s.Store, receipt.SeatId, receipt.SectionId)
@@ -175,6 +186,9 @@ func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSea
 	if req == nil || req.ReceiptId == "" || req.NewSeatId == "" || req.NewSectionId == "" {
 		return nil, fmt.Errorf("Invalid Update-Seat Booking Request")
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	receipt, err := dataStore.CheckValidReceipt(s.Store, req.ReceiptId)
 	if err != nil {
 		return nil, fmt.Errorf("receipt not found: %v", err)

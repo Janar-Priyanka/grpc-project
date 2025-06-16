@@ -25,9 +25,8 @@ func init() {
 	//Assume Train has 2 sections with  20 seats each
 
 	sectionCount := 2
-	seatCount := 20
+	seatCount := 3
 	price := 20
-
 
 	for i := 0; i < sectionCount; i++ {
 		section := &models.Section{
