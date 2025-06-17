@@ -39,17 +39,30 @@ func GetUser(store *models.Store, userId string) *models.User {
 	return nil
 }
 
-func GetPrice(store *models.Store, trainId string) float32 {
-	if store != nil && store.Train.Id == trainId {
-		return store.Train.Price
+//	func GetPriceFrom(store *models.Store, trainId string) float32 {
+//		if store != nil && store.Train.Id == trainId {
+//			return store.Train.Price
+//		}
+//		return 0.0 // Return 0 if train not found or price not set
+//	}
+func GetPriceFromReceipts(store *models.Store, receiptId string) float32 {
+	receipt, err := CheckValidReceipt(store, receiptId)
+	if err != nil {
+		return 0.0
 	}
-	return 0.0 // Return 0 if train not found or price not set
+	return receipt.Price
 }
 func CheckValidReceipt(store *models.Store, receiptId string) (*models.Receipt, error) {
 	if receipt, exists := store.Receipts[receiptId]; exists {
 		return &receipt, nil
 	}
 	return nil, fmt.Errorf("receipt not found for the given Receipt ID : %s", receiptId)
+}
+func CheckValidCouponCode(store *models.Store, couponCode string) bool {
+	if _, exists := store.DiscountCodes[couponCode]; exists {
+		return true
+	}
+	return false
 }
 func CancelReceiptsFromStore(store *models.Store, receiptId string) {
 	if receipt, exists := store.Receipts[receiptId]; exists {

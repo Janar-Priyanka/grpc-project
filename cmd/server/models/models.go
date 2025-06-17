@@ -11,6 +11,7 @@ type Receipt struct {
 	SeatId        string
 	UserId        string
 	BookingStatus string
+	Price float32
 }
 
 type User struct {
@@ -31,7 +32,7 @@ type Seat struct {
 }
 
 type Section struct {
-	Id             string
+	Id             string //A or B
 	Name           string
 	Seats          []*Seat
 	AvailableSeats int
@@ -46,7 +47,11 @@ type Train struct {
 }
 
 type Store struct {
-	Train    Train
-	Users    []*User
-	Receipts map[string]Receipt
+	Train         Train
+	Users         []*User
+	DiscountCodes map[string]float32
+	Receipts      map[string]Receipt
 }
+
+// We want a first class section of the train: section A.  
+// The ticket price would  be $40.

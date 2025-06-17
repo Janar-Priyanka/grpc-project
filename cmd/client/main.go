@@ -21,7 +21,8 @@ func PurchasingTicket(client pb.BookingServiceClient, ctx context.Context) strin
 			LastName:  "Johnson",
 			Email:     "bobthebuilder@gmail.com",
 		},
-		PricePaid: 20.0,
+		PricePaid:      20.0,
+		DisocuntCoupon: "discount3",
 	}
 	purchaseResp, err := client.PurchaseBooking(ctx, purchaseReq)
 	if err != nil {
@@ -173,3 +174,16 @@ func main() {
 	// DeleteBooking(client, ctx, receiptId)
 
 }
+
+//Discount codes
+// A new user wants to purchase a seat and apply their discount code
+
+// These are the only valid codes and discounts: discount1, discount2, discount3
+
+// discount1, $10 off
+
+// discount2, $20 off
+
+// discount3, $30 off
+
+// anything else should be invalid and throw an error

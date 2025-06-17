@@ -21,6 +21,21 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 	if req == nil || req.User == nil || req.From == "" || req.To == "" {
 		return nil, fmt.Errorf("Invalid Booking Request")
 	}
+	var finalTicketPrice float32
+	var valiDiscountCode bool
+
+	if req.DisocuntCoupon == "" {
+		return nil, fmt.Errorf("please provide valid Discount coupon code")
+	}
+
+	valiDiscountCode = dataStore.CheckValidCouponCode(s.Store, req.DisocuntCoupon)
+
+	if valiDiscountCode {
+		discountRate := s.Store.DiscountCodes[req.DisocuntCoupon]
+		finalTicketPrice = req.PricePaid - discountRate
+	} else {
+		return nil, fmt.Errorf("please provide valid Discount code")
+	}
 	user := s.ParseUser(req.User)
 
 	//Allocate the seat in the available section
@@ -40,8 +55,15 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 		SeatId:        seatId,
 		SectionId:     sectionId,
 		SectionName:   dataStore.GetSection(s.Store, sectionId).Name,
+		Price:         finalTicketPrice,
 		BookingStatus: "Confirmed",
 	}
+	if finalTicketPrice > 0 {
+		receipt.Price = finalTicketPrice
+	} else {
+		receipt.Price = 0.0
+	}
+
 	//Update User Store Receipts
 	dataStore.UpdateUserReceipts(s.Store, user.Id, receipt)
 	user.Receipts = append(user.Receipts, receipt)
@@ -61,7 +83,7 @@ func (s *BookingServer) PurchaseBooking(ctx context.Context, req *pb.PurchaseBoo
 			},
 			Seat:          receipt.SeatNumber,
 			Section:       receipt.SectionName,
-			PricePaid:     dataStore.GetPrice(s.Store, s.Store.Train.Id),
+			PricePaid:     receipt.Price,
 			BookingStatus: receipt.BookingStatus,
 		},
 	}
@@ -247,7 +269,7 @@ func (s *BookingServer) UpdateSeatBooking(ctx context.Context, req *pb.UpdateSea
 			},
 			Seat:          receipt.SeatNumber,
 			Section:       receipt.SectionName,
-			PricePaid:     dataStore.GetPrice(s.Store, s.Store.Train.Id),
+			PricePaid:     dataStore.GetPriceFromReceipts(s.Store, receipt.Id),
 			BookingStatus: receipt.BookingStatus,
 		},
 	}
@@ -271,7 +293,7 @@ func (s *BookingServer) MapUserReceipts(userReceipts []*models.Receipt, user *mo
 			},
 			Seat:          receipt.SeatNumber,
 			Section:       receipt.SectionName,
-			PricePaid:     dataStore.GetPrice(s.Store, s.Store.Train.Id),
+			PricePaid:     dataStore.GetPriceFromReceipts(s.Store, receipt.Id),
 			BookingStatus: receipt.BookingStatus,
 		})
 	}

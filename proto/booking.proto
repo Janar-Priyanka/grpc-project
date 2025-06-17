@@ -22,6 +22,7 @@ message PurchaseBookingRequest {
     string To = 2;
     User user = 3;
     float PricePaid = 4;
+    string disocuntCoupon = 5;
 }
 
 message Receipt {

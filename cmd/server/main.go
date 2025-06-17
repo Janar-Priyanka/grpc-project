@@ -28,7 +28,6 @@ func init() {
 	seatCount := 20
 	price := 20
 
-
 	for i := 0; i < sectionCount; i++ {
 		section := &models.Section{
 			Id:             "S" + fmt.Sprint(i+1),
@@ -67,9 +66,17 @@ func init() {
 		Email:     "bobthebuilder@gmail.com",
 		Receipts:  []*models.Receipt{},
 	}
+
 	Store.Users = append(Store.Users, alice, bob)
 	Store.Train.Price = float32(price)
 	Store.Receipts = make(map[string]models.Receipt)
+	//Adding dicount Codes to store
+	Store.DiscountCodes = make(map[string]float32)
+	Store.DiscountCodes = map[string]float32{
+		"discount1": 10.0,
+		"discount2": 20.0,
+		"discount3": 30.0,
+	}
 }
 
 func main() {
